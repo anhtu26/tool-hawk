@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Define our models based on database schema design in the build plan
+
+// User Management Schema
+model User {
+  id              String         @id @default(uuid())
+  email           String         @unique
+  passwordHash    String
+  firstName       String?
+  lastName        String?
+  role            UserRole       @default(USER)
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  partHistory     PartHistory[]
+  auditLogs       AuditLog[]
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+}
+
+// Tool Categories Schema
+model ToolCategory {
+  id                String              @id @default(uuid())
+  name              String              @unique
+  description       String?
+  parentCategoryId  String?
+  parentCategory    ToolCategory?       @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  childCategories   ToolCategory[]      @relation("CategoryHierarchy")
+  attributes        CategoryAttribute[]
+  tools             Tool[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model CategoryAttribute {
+  id            String       @id @default(uuid())
+  name          String
+  description   String?
+  type          AttributeType
+  isRequired    Boolean      @default(false)
+  defaultValue  String?
+  groupName     String?
+  categoryId    String
+  category      ToolCategory @relation(fields: [categoryId], references: [id])
+  validationRule String?      // JSON schema for validation
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([categoryId, name])
+}
+
+enum AttributeType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  DATE
+  SELECT
+  MULTI_SELECT
+}
+
+// Tools Schema
+model Tool {
+  id               String         @id @default(uuid())
+  toolNumber       String         @unique
+  name             String
+  description      String?
+  categoryId       String
+  category         ToolCategory   @relation(fields: [categoryId], references: [id])
+  currentQuantity  Int            @default(0)
+  minimumQuantity  Int            @default(0)
+  unitOfMeasure    String?
+  location         String?
+  vendor           String?
+  price            Float?
+  attributes       Json?          // JSONB for custom attributes
+  purchaseHistory  PurchaseHistory[]
+  partHistory      PartHistory[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+// Purchase History Schema
+model PurchaseHistory {
+  id              String    @id @default(uuid())
+  toolId          String
+  tool            Tool      @relation(fields: [toolId], references: [id])
+  purchaseDate    DateTime
+  quantity        Int
+  purchasePrice   Float
+  poNumber        String?
+  vendor          String?
+  notes           String?
+  documentUrls    Json?     // Array of document URLs
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Part History Schema
+model PartHistory {
+  id              String    @id @default(uuid())
+  toolId          String
+  tool            Tool      @relation(fields: [toolId], references: [id])
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  jobNumber       String
+  partNumber      String
+  quantity        Int
+  dateCheckedOut  DateTime  @default(now())
+  dateReturned    DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Audit Logging Schema
+model AuditLog {
+  id              String      @id @default(uuid())
+  action          String
+  entityType      String
+  entityId        String
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  details         Json?       // Change details
+  createdAt       DateTime    @default(now())
+}
