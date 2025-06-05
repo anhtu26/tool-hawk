@@ -1,22 +1,65 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Define our models based on database schema design in the build plan
+generator client {
+  provider = "prisma-client-js"
+}
 
-// User Management Schema
 enum UserRole {
   admin
   manager
   operator
+}
+
+enum AttributeType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  DATE
+  SELECT_SINGLE
+  SELECT_MULTI
+  RICH_TEXT
+  FILE_ATTACHMENT // For attributes that are files themselves, distinct from general document_attachments
+}
+
+enum ToolStatus {
+  ACTIVE
+  INACTIVE
+  UNDER_MAINTENANCE
+  DISCONTINUED
+  ARCHIVED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ORDERED
+  PARTIALLY_RECEIVED
+  FULLY_RECEIVED
+  CANCELLED
+}
+
+enum DocumentEntityType {
+  PURCHASE_ORDER
+  TOOL
+  VENDOR
+  CATEGORY_ATTRIBUTE // As per PRD, for attaching docs to specific attribute definitions
+}
+
+enum CheckoutStatus {
+  CHECKED_OUT
+  CHECKED_IN
+  PARTIALLY_RETURNED
+  OVERDUE
+}
+
+enum ToolConditionOnReturn {
+  GOOD
+  DAMAGED
+  CONSUMED
+  NEEDS_MAINTENANCE
 }
 
 model User {
@@ -32,8 +75,7 @@ model User {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  // Relations
-  preferences      UserPreference?
+  preferences      UserPreference? 
   refreshTokens    RefreshToken[]
   toolsCreated     Tool[]           @relation("ToolsCreatedByUser")
   toolsUpdated     Tool[]           @relation("ToolsUpdatedByUser")
@@ -66,19 +108,6 @@ model RefreshToken {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId])
-}
-
-
-// Tool Categories Schema
-enum AttributeType {
-  TEXT
-  NUMBER
-  BOOLEAN
-  DATE
-  SELECT_SINGLE
-  SELECT_MULTI
-  RICH_TEXT
-  FILE_ATTACHMENT // For attributes that are files themselves, distinct from general document_attachments
 }
 
 model ToolCategory {
@@ -136,7 +165,6 @@ model CategoryAttribute {
   @@unique([categoryId, name])
 }
 
-// Vendors Schema
 model Vendor {
   id             String   @id @default(cuid())
   name           String   @unique
@@ -151,15 +179,6 @@ model Vendor {
 
   toolsAsPrimaryVendor Tool[]           @relation("PrimaryVendorForTool")
   purchaseOrders       PurchaseOrder[]
-}
-
-// Tools Schema
-enum ToolStatus {
-  ACTIVE
-  INACTIVE
-  UNDER_MAINTENANCE
-  DISCONTINUED
-  ARCHIVED
 }
 
 model Tool {
@@ -197,23 +216,6 @@ model Tool {
   @@index([categoryId])
   @@index([status])
   @@index([customAttributes], type: Gin) // Prisma might need specific syntax or this is a DB level command
-}
-
-// Purchase History Schema
-enum PurchaseOrderStatus {
-  DRAFT
-  PENDING_APPROVAL
-  ORDERED
-  PARTIALLY_RECEIVED
-  FULLY_RECEIVED
-  CANCELLED
-}
-
-enum DocumentEntityType {
-  PURCHASE_ORDER
-  TOOL
-  VENDOR
-  CATEGORY_ATTRIBUTE // As per PRD, for attaching docs to specific attribute definitions
 }
 
 model PurchaseOrder {
@@ -290,21 +292,6 @@ model DocumentAttachment {
   @@index([uploadedByUserId])
 }
 
-// Part History & Tool Check-out Schema
-enum CheckoutStatus {
-  CHECKED_OUT
-  CHECKED_IN
-  PARTIALLY_RETURNED
-  OVERDUE
-}
-
-enum ToolConditionOnReturn {
-  GOOD
-  DAMAGED
-  CONSUMED
-  NEEDS_MAINTENANCE
-}
-
 model ToolCheckout {
   id                   String                 @id @default(cuid())
   toolId               String
@@ -351,7 +338,6 @@ model ToolUsageCache {
   @@unique([userId, jobNumber, partNumber, machineId]) // Ensure one cached entry per combination per user
 }
 
-// Audit Logging Schema
 model AuditLog {
   id             String    @id @default(cuid())
   userId         String?   // Nullable for system-initiated actions

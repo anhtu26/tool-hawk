@@ -1,6 +1,8 @@
 import express, { Router } from 'express';
-// Use a relative import that doesn't need type declarations
+// Import routes
 const healthRoutes = require('./healthRoutes').default;
+const userRoutes = require('./userRoutes').default;
+const categoryRoutes = require('./categoryRoutes').default;
 
 const router: Router = express.Router();
 
@@ -9,12 +11,13 @@ const API_PREFIX = '/api/v1';
 
 // Register routes
 router.use(`${API_PREFIX}/health`, healthRoutes);
+router.use(`${API_PREFIX}/users`, userRoutes);
+router.use(`${API_PREFIX}/categories`, categoryRoutes);
 
 // Add additional routes as they are implemented
-// router.use(`${API_PREFIX}/users`, userRoutes);
-// router.use(`${API_PREFIX}/categories`, categoryRoutes);
 // router.use(`${API_PREFIX}/tools`, toolRoutes);
-// router.use(`${API_PREFIX}/purchases`, purchaseHistoryRoutes);
-// router.use(`${API_PREFIX}/parts`, partHistoryRoutes);
+// router.use(`${API_PREFIX}/vendors`, vendorRoutes);
+// router.use(`${API_PREFIX}/purchases`, purchaseOrderRoutes);
+// router.use(`${API_PREFIX}/checkouts`, checkoutRoutes);
 
 export default router;
