@@ -66,6 +66,7 @@ The application serves as a centralized repository for all tool-related informat
 - Tool category management API with attributes and groups
 - Vendor management API with contacts and relationship tracking
 - Comprehensive validation using Zod
+- **Category Service/Controller Issues**: Resolved. `CategoryService` instantiation corrected, controller methods now align with service definitions, and `asyncHandler` usage standardized. The `getCategoryTools` functionality is pending service-level implementation and is currently commented out in the controller and routes.)
 
 ### In Progress
 - Tool management API implementation

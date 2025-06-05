@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { CategoryService } from '../services/categoryService';
+import { CategoryService } from '../services/category';
 import { AppError } from '../utils/appError';
 
 export class CategoryController {
@@ -14,7 +14,7 @@ export class CategoryController {
    */
   public getAllCategories = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const categories = await this.categoryService.getAllCategories();
+      const categories = await this.categoryService.base.getAllCategories();
       
       return res.status(200).json({
         success: true,
@@ -32,7 +32,7 @@ export class CategoryController {
   public getCategoryById = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const category = await this.categoryService.getCategoryById(id);
+      const category = await this.categoryService.base.getCategoryById(id);
       
       if (!category) {
         throw new AppError('Category not found', 404);
@@ -54,7 +54,7 @@ export class CategoryController {
   public createCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const categoryData = req.body;
-      const newCategory = await this.categoryService.createCategory(categoryData);
+      const newCategory = await this.categoryService.base.createCategory(categoryData);
       
       return res.status(201).json({
         success: true,
@@ -73,7 +73,7 @@ export class CategoryController {
     try {
       const { id } = req.params;
       const categoryData = req.body;
-      const updatedCategory = await this.categoryService.updateCategory(id, categoryData);
+      const updatedCategory = await this.categoryService.base.updateCategory(id, categoryData);
       
       return res.status(200).json({
         success: true,
@@ -91,7 +91,7 @@ export class CategoryController {
   public deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      await this.categoryService.deleteCategory(id);
+      await this.categoryService.base.deleteCategory(id);
       
       return res.status(200).json({
         success: true,
@@ -108,7 +108,7 @@ export class CategoryController {
   public getCategoryAttributes = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const attributes = await this.categoryService.getCategoryAttributes(id);
+      const attributes = await this.categoryService.attribute.getAttributesByCategoryId(id);
       
       return res.status(200).json({
         success: true,
@@ -123,20 +123,22 @@ export class CategoryController {
   /**
    * Get tools in category
    */
+  /*
   public getCategoryTools = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const tools = await this.categoryService.getCategoryTools(id);
+            // const tools = await this.categoryService.base.getCategoryTools(id); // Method missing in service
       
       return res.status(200).json({
         success: true,
         message: 'Category tools retrieved successfully',
-        data: tools
+        data: [] // Placeholder for tools
       });
     } catch (error) {
       next(error);
     }
-  };
+  }; 
+  */
 
   /**
    * Create attribute group
@@ -145,7 +147,7 @@ export class CategoryController {
     try {
       const { id } = req.params;
       const groupData = req.body;
-      const newGroup = await this.categoryService.createAttributeGroup(id, groupData);
+      const newGroup = await this.categoryService.attributeGroup.createAttributeGroup(id, groupData);
       
       return res.status(201).json({
         success: true,
@@ -164,7 +166,7 @@ export class CategoryController {
     try {
       const { id, groupId } = req.params;
       const groupData = req.body;
-      const updatedGroup = await this.categoryService.updateAttributeGroup(id, groupId, groupData);
+      const updatedGroup = await this.categoryService.attributeGroup.updateAttributeGroup(groupId, groupData);
       
       return res.status(200).json({
         success: true,
@@ -182,7 +184,7 @@ export class CategoryController {
   public deleteAttributeGroup = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id, groupId } = req.params;
-      await this.categoryService.deleteAttributeGroup(id, groupId);
+      await this.categoryService.attributeGroup.deleteAttributeGroup(groupId);
       
       return res.status(200).json({
         success: true,
@@ -198,9 +200,9 @@ export class CategoryController {
    */
   public createAttribute = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id, groupId } = req.params;
       const attributeData = req.body;
-      const newAttribute = await this.categoryService.createAttribute(id, attributeData);
+      const newAttribute = await this.categoryService.attribute.createAttribute(id, attributeData);
       
       return res.status(201).json({
         success: true,
@@ -217,9 +219,9 @@ export class CategoryController {
    */
   public updateAttribute = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id, attributeId } = req.params;
+      const { id, groupId, attributeId } = req.params;
       const attributeData = req.body;
-      const updatedAttribute = await this.categoryService.updateAttribute(id, attributeId, attributeData);
+      const updatedAttribute = await this.categoryService.attribute.updateAttribute(attributeId, attributeData);
       
       return res.status(200).json({
         success: true,
@@ -236,8 +238,8 @@ export class CategoryController {
    */
   public deleteAttribute = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id, attributeId } = req.params;
-      await this.categoryService.deleteAttribute(id, attributeId);
+      const { id, groupId, attributeId } = req.params;
+      await this.categoryService.attribute.deleteAttribute(attributeId);
       
       return res.status(200).json({
         success: true,

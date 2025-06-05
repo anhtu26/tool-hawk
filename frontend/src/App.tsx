@@ -16,6 +16,8 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 
 // Tool Pages
 import ToolsListPage from './pages/tools/ToolsListPage';
+// Category Pages
+import CategoryManagementPage from './pages/CategoryManagementPage';
 import ToolDetailPage from './pages/tools/ToolDetailPage';
 import CreateToolPage from './pages/tools/CreateToolPage';
 import EditToolPage from './pages/tools/EditToolPage';
@@ -43,6 +45,7 @@ function App() {
               <Route path="/tools/:id" element={<ToolDetailPage />} />
               <Route path="/tools/create" element={<CreateToolPage />} />
               <Route path="/tools/edit/:id" element={<EditToolPage />} />
+              <Route path="/categories" element={<CategoryManagementPage />} />
               <Route path="/vendors" element={<VendorsList />} />
             </Route>
           </Route>
