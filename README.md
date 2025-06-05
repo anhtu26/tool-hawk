@@ -64,13 +64,14 @@ The application serves as a centralized repository for all tool-related informat
 - User authentication and authorization system
 - User management API (CRUD operations)
 - Tool category management API with attributes and groups
+- Vendor management API with contacts and relationship tracking
 - Comprehensive validation using Zod
 
 ### In Progress
 - Tool management API implementation
-- Vendor management API
 - Purchase order and history tracking
 - Tool checkout system
+- Database seed scripts for initial data
 
 ### Next Steps
 - Implement remaining backend APIs (tools, vendors, purchases)
