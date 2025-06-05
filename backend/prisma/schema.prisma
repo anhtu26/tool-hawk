@@ -20,30 +20,30 @@ enum UserRole {
 }
 
 model User {
-  id               String           @id @default(cuid())
-  username         String           @unique
-  email            String           @unique
-  passwordHash     String
-  firstName        String?
-  lastName         String?
-  role             UserRole         @default(operator)
-  isActive         Boolean          @default(true)
-  lastLoginAt      DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id           String    @id @default(cuid())
+  username     String    @unique
+  email        String    @unique
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  role         UserRole  @default(operator)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relations
-  preferences      UserPreference?
-  refreshTokens    RefreshToken[]
-  toolsCreated     Tool[]           @relation("ToolsCreatedByUser")
-  toolsUpdated     Tool[]           @relation("ToolsUpdatedByUser")
-  purchaseOrdersCreated PurchaseOrder[] @relation("PurchaseOrdersCreatedByUser")
-  purchaseOrdersApproved PurchaseOrder[] @relation("PurchaseOrdersApprovedByUser")
-  documentUploads  DocumentAttachment[] @relation("DocumentUploadedByUser")
-  checkouts        ToolCheckout[]   @relation("ToolCheckedOutByUser")
-  checkins         ToolCheckout[]   @relation("ToolCheckedInByUser")
-  auditLogs        AuditLog[]
-  toolUsageCache   ToolUsageCache[]
+  preferences            UserPreference?
+  refreshTokens          RefreshToken[]
+  toolsCreated           Tool[]               @relation("ToolsCreatedByUser")
+  toolsUpdated           Tool[]               @relation("ToolsUpdatedByUser")
+  purchaseOrdersCreated  PurchaseOrder[]      @relation("PurchaseOrdersCreatedByUser")
+  purchaseOrdersApproved PurchaseOrder[]      @relation("PurchaseOrdersApprovedByUser")
+  documentUploads        DocumentAttachment[] @relation("DocumentUploadedByUser")
+  checkouts              ToolCheckout[]       @relation("ToolCheckedOutByUser")
+  checkins               ToolCheckout[]       @relation("ToolCheckedInByUser")
+  auditLogs              AuditLog[]
+  toolUsageCache         ToolUsageCache[]
 }
 
 model UserPreference {
@@ -65,9 +65,9 @@ model RefreshToken {
   revokedAt DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }
-
 
 // Tool Categories Schema
 enum AttributeType {
@@ -82,29 +82,29 @@ enum AttributeType {
 }
 
 model ToolCategory {
-  id                 String              @id @default(cuid())
-  name               String
-  description        String?
-  parentId           String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  parentId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  parentCategory     ToolCategory?       @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete:Restrict)
-  childCategories    ToolCategory[]      @relation("CategoryHierarchy")
-  attributes         CategoryAttribute[]
-  tools              Tool[]
-  attributeGroups    AttributeGroup[]
+  parentCategory  ToolCategory?       @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  childCategories ToolCategory[]      @relation("CategoryHierarchy")
+  attributes      CategoryAttribute[]
+  tools           Tool[]
+  attributeGroups AttributeGroup[]
 
   @@unique([name, parentId]) // Name must be unique within the same parent
 }
 
 model AttributeGroup {
-  id          String   @id @default(cuid())
-  categoryId  String
-  name        String   // For UI grouping of attributes
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  categoryId String
+  name       String // For UI grouping of attributes
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   category   ToolCategory        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   attributes CategoryAttribute[]
@@ -113,43 +113,43 @@ model AttributeGroup {
 }
 
 model CategoryAttribute {
-  id                String        @id @default(cuid())
-  categoryId        String
-  attributeGroupId  String?
-  name              String        // machine-readable, e.g., cutting_diameter
-  label             String        // human-readable, e.g., "Cutting Diameter"
-  attributeType     AttributeType
-  isRequired        Boolean       @default(false)
-  defaultValue      String?
-  options           Json?         // For SELECT types, e.g., [{ "value": "option1", "label": "Option 1" }]
-  validationRules   Json?         // e.g., { "minLength": 1, "maxLength": 255 } or { "min": 0, "max": 100 }
-  sortOrder         Int           @default(0)
-  tooltip           String?       // For UI hints
-  isFilterable      Boolean       @default(true)
-  isSearchable      Boolean       @default(true)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  categoryId       String
+  attributeGroupId String?
+  name             String // machine-readable, e.g., cutting_diameter
+  label            String // human-readable, e.g., "Cutting Diameter"
+  attributeType    AttributeType
+  isRequired       Boolean       @default(false)
+  defaultValue     String?
+  options          Json? // For SELECT types, e.g., [{ "value": "option1", "label": "Option 1" }]
+  validationRules  Json? // e.g., { "minLength": 1, "maxLength": 255 } or { "min": 0, "max": 100 }
+  sortOrder        Int           @default(0)
+  tooltip          String? // For UI hints
+  isFilterable     Boolean       @default(true)
+  isSearchable     Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  category         ToolCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  attributeGroup   AttributeGroup? @relation(fields: [attributeGroupId], references: [id], onDelete:SetNull)
+  category       ToolCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  attributeGroup AttributeGroup? @relation(fields: [attributeGroupId], references: [id], onDelete: SetNull)
 
   @@unique([categoryId, name])
 }
 
 // Vendors Schema
 model Vendor {
-  id             String   @id @default(cuid())
-  name           String   @unique
-  contactPerson  String?
-  email          String?  // Add validation in application layer
-  phone          String?
-  address        String?
-  website        String?  // Add URL validation in application layer
-  notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String   @unique
+  contactPerson String?
+  email         String? // Add validation in application layer
+  phone         String?
+  address       String?
+  website       String? // Add URL validation in application layer
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  toolsAsPrimaryVendor Tool[]           @relation("PrimaryVendorForTool")
+  toolsAsPrimaryVendor Tool[]          @relation("PrimaryVendorForTool")
   purchaseOrders       PurchaseOrder[]
 }
 
@@ -163,35 +163,35 @@ enum ToolStatus {
 }
 
 model Tool {
-  id                 String    @id @default(cuid())
-  toolNumber         String    @unique
-  name               String
-  description        String?
-  categoryId         String
-  customAttributes   Json      // Will be indexed with GIN
-  currentQuantity    Decimal   @default(0) @db.Decimal(10, 2)
-  safeQuantity       Decimal   @default(0) @db.Decimal(10, 2)
-  maxQuantity        Decimal?  @db.Decimal(10, 2)
-  unitOfMeasure      String    // e.g., "pcs", "mm", "inch"
-  costPerUnit        Decimal?  @db.Decimal(12, 4) // Increased precision for cost
-  primaryVendorId    String?
-  locationInShop     String?
-  imageUrl           String?
-  status             ToolStatus @default(ACTIVE)
-  lifespanExpected   Int?      // e.g., in hours or cycles
-  lifespanUnit       String?   // e.g., "hours", "cycles", "units_produced"
-  createdByUserId    String
-  updatedByUserId    String
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id               String     @id @default(cuid())
+  toolNumber       String     @unique
+  name             String
+  description      String?
+  categoryId       String
+  customAttributes Json // Will be indexed with GIN
+  currentQuantity  Decimal    @default(0) @db.Decimal(10, 2)
+  safeQuantity     Decimal    @default(0) @db.Decimal(10, 2)
+  maxQuantity      Decimal?   @db.Decimal(10, 2)
+  unitOfMeasure    String // e.g., "pcs", "mm", "inch"
+  costPerUnit      Decimal?   @db.Decimal(12, 4) // Increased precision for cost
+  primaryVendorId  String?
+  locationInShop   String?
+  imageUrl         String?
+  status           ToolStatus @default(ACTIVE)
+  lifespanExpected Int? // e.g., in hours or cycles
+  lifespanUnit     String? // e.g., "hours", "cycles", "units_produced"
+  createdByUserId  String
+  updatedByUserId  String
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
-  category          ToolCategory        @relation(fields: [categoryId], references: [id])
-  primaryVendor     Vendor?             @relation("PrimaryVendorForTool", fields: [primaryVendorId], references: [id], onDelete:SetNull)
-  createdBy         User                @relation("ToolsCreatedByUser", fields: [createdByUserId], references: [id])
-  updatedBy         User                @relation("ToolsUpdatedByUser", fields: [updatedByUserId], references: [id])
-  purchaseOrderItems PurchaseOrderItem[]
+  category            ToolCategory         @relation(fields: [categoryId], references: [id])
+  primaryVendor       Vendor?              @relation("PrimaryVendorForTool", fields: [primaryVendorId], references: [id], onDelete: SetNull)
+  createdBy           User                 @relation("ToolsCreatedByUser", fields: [createdByUserId], references: [id])
+  updatedBy           User                 @relation("ToolsUpdatedByUser", fields: [updatedByUserId], references: [id])
+  purchaseOrderItems  PurchaseOrderItem[]
   documentAttachments DocumentAttachment[] @relation("ToolDocuments") // Specific relation for tool documents
-  checkouts         ToolCheckout[]
+  checkouts           ToolCheckout[]
 
   @@index([toolNumber])
   @@index([categoryId])
@@ -235,11 +235,11 @@ model PurchaseOrder {
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
 
-  vendor             Vendor                @relation(fields: [vendorId], references: [id])
-  createdBy          User                  @relation("PurchaseOrdersCreatedByUser", fields: [createdByUserId], references: [id])
-  approvedBy         User?                 @relation("PurchaseOrdersApprovedByUser", fields: [approvedByUserId], references: [id])
-  items              PurchaseOrderItem[]
-  documentAttachments DocumentAttachment[]   @relation("PurchaseOrderDocuments") // Specific relation
+  vendor              Vendor               @relation(fields: [vendorId], references: [id])
+  createdBy           User                 @relation("PurchaseOrdersCreatedByUser", fields: [createdByUserId], references: [id])
+  approvedBy          User?                @relation("PurchaseOrdersApprovedByUser", fields: [approvedByUserId], references: [id])
+  items               PurchaseOrderItem[]
+  documentAttachments DocumentAttachment[] @relation("PurchaseOrderDocuments") // Specific relation
 
   @@index([orderNumber])
   @@index([vendorId])
@@ -249,8 +249,8 @@ model PurchaseOrder {
 model PurchaseOrderItem {
   id                  String    @id @default(cuid())
   purchaseOrderId     String
-  toolId              String?    // Nullable if it's a non-catalog item described by descriptionOverride
-  descriptionOverride String?   // For items not yet in Tool DB or custom one-off items
+  toolId              String? // Nullable if it's a non-catalog item described by descriptionOverride
+  descriptionOverride String? // For items not yet in Tool DB or custom one-off items
   quantityOrdered     Decimal   @db.Decimal(10, 2)
   quantityReceived    Decimal   @default(0) @db.Decimal(10, 2)
   unitCost            Decimal   @db.Decimal(12, 4) // Increased precision for cost
@@ -261,29 +261,29 @@ model PurchaseOrderItem {
   updatedAt           DateTime  @updatedAt
 
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  tool          Tool?         @relation(fields: [toolId], references: [id], onDelete:SetNull)
+  tool          Tool?         @relation(fields: [toolId], references: [id], onDelete: SetNull)
 
   @@index([purchaseOrderId])
   @@index([toolId])
 }
 
 model DocumentAttachment {
-  id                String             @id @default(cuid())
-  displayName       String
-  fileNameStorage   String             @unique // System-generated unique name for stored file
-  filePath          String             // Path in storage system
-  mimeType          String
-  fileSizeBytes     Int
-  entityType        DocumentEntityType // PURCHASE_ORDER, TOOL, VENDOR, CATEGORY_ATTRIBUTE
-  entityId          String             // References PK of the related entity's table
-  description       String?
-  uploadedByUserId  String
-  createdAt         DateTime           @default(now())
+  id               String             @id @default(cuid())
+  displayName      String
+  fileNameStorage  String             @unique // System-generated unique name for stored file
+  filePath         String // Path in storage system
+  mimeType         String
+  fileSizeBytes    Int
+  entityType       DocumentEntityType // PURCHASE_ORDER, TOOL, VENDOR, CATEGORY_ATTRIBUTE
+  entityId         String // References PK of the related entity's table
+  description      String?
+  uploadedByUserId String
+  createdAt        DateTime           @default(now())
 
-  uploadedByUser User @relation("DocumentUploadedByUser", fields: [uploadedByUserId], references: [id])
+  uploadedByUser User           @relation("DocumentUploadedByUser", fields: [uploadedByUserId], references: [id])
   // For specific relations if desired, though entityType/entityId is the main polymorphic link
-  purchaseOrder    PurchaseOrder? @relation("PurchaseOrderDocuments", fields: [entityId], references: [id], onDelete:Cascade, onUpdate:Cascade)
-  tool             Tool?          @relation("ToolDocuments", fields: [entityId], references: [id], onDelete:Cascade, onUpdate:Cascade)
+  purchaseOrder  PurchaseOrder? @relation("PurchaseOrderDocuments", fields: [entityId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "fk_document_attachment_purchase_order")
+  tool           Tool?          @relation("ToolDocuments", fields: [entityId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "fk_document_attachment_tool")
   // Vendor and CategoryAttribute attachments would be linked via application logic using entityId
 
   @@index([entityType, entityId])
@@ -306,28 +306,28 @@ enum ToolConditionOnReturn {
 }
 
 model ToolCheckout {
-  id                   String                 @id @default(cuid())
-  toolId               String
-  checkedOutByUserId   String
-  jobNumber            String?
-  partNumber           String?
-  machineId            String?
-  quantityCheckedOut   Decimal                @db.Decimal(10, 2)
-  checkoutTime         DateTime               @default(now())
-  expectedReturnTime   DateTime?
-  checkinTime          DateTime?
-  checkedInByUserId    String?
-  quantityReturned     Decimal?               @db.Decimal(10, 2)
-  quantityConsumed     Decimal?               @db.Decimal(10, 2) // Calculated or entered
-  conditionOnReturn    ToolConditionOnReturn? 
-  notesCheckout        String?
-  notesCheckin         String?
-  status               CheckoutStatus         @default(CHECKED_OUT)
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
+  id                 String                 @id @default(cuid())
+  toolId             String
+  checkedOutByUserId String
+  jobNumber          String?
+  partNumber         String?
+  machineId          String?
+  quantityCheckedOut Decimal                @db.Decimal(10, 2)
+  checkoutTime       DateTime               @default(now())
+  expectedReturnTime DateTime?
+  checkinTime        DateTime?
+  checkedInByUserId  String?
+  quantityReturned   Decimal?               @db.Decimal(10, 2)
+  quantityConsumed   Decimal?               @db.Decimal(10, 2) // Calculated or entered
+  conditionOnReturn  ToolConditionOnReturn?
+  notesCheckout      String?
+  notesCheckin       String?
+  status             CheckoutStatus         @default(CHECKED_OUT)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
 
-  tool             Tool @relation(fields: [toolId], references: [id])
-  checkedOutByUser User @relation("ToolCheckedOutByUser", fields: [checkedOutByUserId], references: [id])
+  tool             Tool  @relation(fields: [toolId], references: [id])
+  checkedOutByUser User  @relation("ToolCheckedOutByUser", fields: [checkedOutByUserId], references: [id])
   checkedInByUser  User? @relation("ToolCheckedInByUser", fields: [checkedInByUserId], references: [id])
 
   @@index([toolId])
@@ -339,32 +339,32 @@ model ToolCheckout {
 }
 
 model ToolUsageCache {
-  id           String   @id @default(cuid())
-  userId       String
-  jobNumber    String
-  partNumber   String?
-  machineId    String?
-  lastUsedAt   DateTime @default(now()) @updatedAt // Update timestamp on each use
+  id         String   @id @default(cuid())
+  userId     String
+  jobNumber  String
+  partNumber String?
+  machineId  String?
+  lastUsedAt DateTime @default(now()) @updatedAt // Update timestamp on each use
 
-  user User @relation(fields: [userId], references: [id], onDelete:Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, jobNumber, partNumber, machineId]) // Ensure one cached entry per combination per user
 }
 
 // Audit Logging Schema
 model AuditLog {
-  id             String    @id @default(cuid())
-  userId         String?   // Nullable for system-initiated actions
-  actionType     String    // e.g., "USER_LOGIN", "TOOL_CREATE"
-  entityType     String?   // e.g., "Tool", "User"
-  entityId       String?   // References PK of the entity_type table
-  detailsBefore  Json?     // State before change
-  detailsAfter   Json?     // State after change or action specifics
-  ipAddress      String?
-  userAgent      String?
-  timestamp      DateTime  @default(now())
+  id            String   @id @default(cuid())
+  userId        String? // Nullable for system-initiated actions
+  actionType    String // e.g., "USER_LOGIN", "TOOL_CREATE"
+  entityType    String? // e.g., "Tool", "User"
+  entityId      String? // References PK of the entity_type table
+  detailsBefore Json? // State before change
+  detailsAfter  Json? // State after change or action specifics
+  ipAddress     String?
+  userAgent     String?
+  timestamp     DateTime @default(now())
 
-  user User? @relation(fields: [userId], references: [id], onDelete:SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([timestamp])
   @@index([userId])
