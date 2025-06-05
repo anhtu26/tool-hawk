@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { UtilsService } from '../services/utils.service';
-
-const prisma = new PrismaClient();
+import { ToolService } from '../services/tool.service';
 
 // Tool validation schema
 const toolSchema = z.object({
@@ -28,73 +26,17 @@ export const toolsController = {
   // Get all tools with filtering
   async getTools(req: Request, res: Response) {
     try {
-      const { 
-        categoryId, 
-        status, 
-        search, 
-        page = '1', 
-        limit = '10',
-        sortBy = 'name',
-        sortOrder = 'asc'
-      } = req.query;
-
-      // Build filter
-      const filter: any = {};
-      
-      if (categoryId) {
-        filter.categoryId = categoryId as string;
-      }
-      
-      if (status) {
-        filter.status = status as string;
-      }
-      
-      if (search) {
-        filter.OR = [
-          { name: { contains: search as string, mode: 'insensitive' } },
-          { toolNumber: { contains: search as string, mode: 'insensitive' } },
-          { description: { contains: search as string, mode: 'insensitive' } }
-        ];
-      }
-
-      // Parse pagination
-      const pageNum = parseInt(page as string, 10);
-      const limitNum = parseInt(limit as string, 10);
-      const skip = (pageNum - 1) * limitNum;
-
-      // Get tools with pagination
-      const [tools, totalCount] = await Promise.all([
-        prisma.tool.findMany({
-          where: filter,
-          include: {
-            category: {
-              select: { name: true }
-            },
-            primaryVendor: {
-              select: { name: true }
-            }
-          },
-          orderBy: {
-            [sortBy as string]: sortOrder
-          },
-          skip,
-          take: limitNum
-        }),
-        prisma.tool.count({ where: filter })
-      ]);
-
-      // Calculate pagination metadata
-      const totalPages = Math.ceil(totalCount / limitNum);
-
-      return res.json({
-        data: tools,
-        meta: {
-          total: totalCount,
-          page: pageNum,
-          limit: limitNum,
-          totalPages
-        }
+      const result = await ToolService.getTools({
+        categoryId: req.query.categoryId as string,
+        status: req.query.status as string,
+        search: req.query.search as string,
+        page: req.query.page as string,
+        limit: req.query.limit as string,
+        sortBy: req.query.sortBy as string,
+        sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'asc'
       });
+
+      return res.json(result);
     } catch (error) {
       console.error('Error getting tools:', error);
       return res.status(500).json({ error: 'Failed to get tools' });
@@ -105,15 +47,7 @@ export const toolsController = {
   async getToolById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-
-      const tool = await prisma.tool.findUnique({
-        where: { id },
-        include: {
-          category: true,
-          primaryVendor: true,
-          documentAttachments: true
-        }
-      });
+      const tool = await ToolService.getToolById(id);
 
       if (!tool) {
         return res.status(404).json({ error: 'Tool not found' });
@@ -146,51 +80,15 @@ export const toolsController = {
       }
 
       const toolData = validationResult.data;
-
-      // Check if category exists
-      const categoryExists = await prisma.toolCategory.findUnique({
-        where: { id: toolData.categoryId },
-        select: { id: true }
-      });
-
-      if (!categoryExists) {
-        return res.status(400).json({ error: 'Invalid category ID' });
+      
+      // Validate tool data
+      const validationErrors = await ToolService.validateToolData(toolData);
+      if (validationErrors.length > 0) {
+        return res.status(400).json({ error: validationErrors[0] });
       }
-
-      // Check if vendor exists if provided
-      if (toolData.primaryVendorId) {
-        const vendorExists = await prisma.vendor.findUnique({
-          where: { id: toolData.primaryVendorId },
-          select: { id: true }
-        });
-
-        if (!vendorExists) {
-          return res.status(400).json({ error: 'Invalid vendor ID' });
-        }
-      }
-
-      // Generate tool number
-      const toolNumber = await UtilsService.generateSequentialNumber('tool', 'TOOL-', 'toolNumber');
 
       // Create tool
-      const tool = await prisma.tool.create({
-        data: {
-          ...toolData,
-          toolNumber,
-          createdByUserId: userId,
-          updatedByUserId: userId
-        }
-      });
-
-      // Create audit log
-      await UtilsService.createAuditLog({
-        userId,
-        actionType: 'TOOL_CREATE',
-        entityType: 'Tool',
-        entityId: tool.id,
-        detailsAfter: tool
-      });
-
+      const tool = await ToolService.createTool(toolData, userId);
       return res.status(201).json(tool);
     } catch (error) {
       console.error('Error creating tool:', error);
@@ -219,58 +117,19 @@ export const toolsController = {
       }
 
       const toolData = validationResult.data;
-
-      // Check if tool exists
-      const existingTool = await prisma.tool.findUnique({
-        where: { id }
-      });
-
-      if (!existingTool) {
-        return res.status(404).json({ error: 'Tool not found' });
-      }
-
-      // Check if category exists if provided
-      if (toolData.categoryId) {
-        const categoryExists = await prisma.toolCategory.findUnique({
-          where: { id: toolData.categoryId },
-          select: { id: true }
-        });
-
-        if (!categoryExists) {
-          return res.status(400).json({ error: 'Invalid category ID' });
-        }
-      }
-
-      // Check if vendor exists if provided
-      if (toolData.primaryVendorId) {
-        const vendorExists = await prisma.vendor.findUnique({
-          where: { id: toolData.primaryVendorId },
-          select: { id: true }
-        });
-
-        if (!vendorExists) {
-          return res.status(400).json({ error: 'Invalid vendor ID' });
-        }
+      
+      // Validate tool data
+      const validationErrors = await ToolService.validateToolData(toolData, true);
+      if (validationErrors.length > 0) {
+        return res.status(400).json({ error: validationErrors[0] });
       }
 
       // Update tool
-      const updatedTool = await prisma.tool.update({
-        where: { id },
-        data: {
-          ...toolData,
-          updatedByUserId: userId
-        }
-      });
-
-      // Create audit log
-      await UtilsService.createAuditLog({
-        userId,
-        actionType: 'TOOL_UPDATE',
-        entityType: 'Tool',
-        entityId: id,
-        detailsBefore: existingTool,
-        detailsAfter: updatedTool
-      });
+      const updatedTool = await ToolService.updateTool(id, toolData, userId);
+      
+      if (!updatedTool) {
+        return res.status(404).json({ error: 'Tool not found' });
+      }
 
       return res.json(updatedTool);
     } catch (error) {
@@ -296,47 +155,21 @@ export const toolsController = {
         return res.status(403).json({ error: 'Insufficient permissions' });
       }
 
-      // Check if tool exists
-      const existingTool = await prisma.tool.findUnique({
-        where: { id }
-      });
-
-      if (!existingTool) {
-        return res.status(404).json({ error: 'Tool not found' });
-      }
-
-      // Check if tool has any checkouts
-      const hasCheckouts = await prisma.toolCheckout.findFirst({
-        where: { 
-          toolId: id,
-          status: { in: ['CHECKED_OUT', 'PARTIALLY_RETURNED'] }
-        }
-      });
-
-      if (hasCheckouts) {
-        return res.status(400).json({ 
-          error: 'Cannot delete tool with active checkouts' 
-        });
-      }
-
-      // Create audit log before deletion
-      await UtilsService.createAuditLog({
-        userId,
-        actionType: 'TOOL_DELETE',
-        entityType: 'Tool',
-        entityId: id,
-        detailsBefore: existingTool
-      });
-
       // Delete tool
-      await prisma.tool.delete({
-        where: { id }
-      });
+      try {
+        const deletedTool = await ToolService.deleteTool(id, userId);
+        
+        if (!deletedTool) {
+          return res.status(404).json({ error: 'Tool not found' });
+        }
 
-      return res.json({ success: true, message: 'Tool deleted successfully' });
+        return res.json({ message: 'Tool deleted successfully' });
+      } catch (err: any) {
+        return res.status(400).json({ error: err.message });
+      }
     } catch (error) {
       console.error('Error deleting tool:', error);
       return res.status(500).json({ error: 'Failed to delete tool' });
     }
-  }
+  },
 };

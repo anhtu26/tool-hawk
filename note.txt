@@ -1,0 +1,4 @@
+ Find largest files in a directory
+ Get-ChildItem -Path "c:\Users\anhtu\CascadeProjects\tool-hawk\backend\src" -Recurse -Include *.ts,*.tsx | ForEach-Object { $_ | Select-Object FullName, @{Name="LineCount"; Expression={(Get-Content $_.FullName | Measure-Object -Line).Lines}} } | Sort-Object LineCount -Descending | Select-Object -First 10 | Format-Table -AutoSize
+
+ Get-ChildItem -Path "c:\Users\anhtu\CascadeProjects\tool-hawk\frontend\src" -Recurse -Include *.ts,*.tsx | ForEach-Object { $_ | Select-Object FullName, @{Name="LineCount"; Expression={(Get-Content $_.FullName | Measure-Object -Line).Lines}} } | Sort-Object LineCount -Descending | Select-Object -First 10 | Format-Table -AutoSize
