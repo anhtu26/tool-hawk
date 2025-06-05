@@ -14,8 +14,8 @@ export class UserController {
    */
   public login = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { username, password } = req.body;
-      const result = await this.userService.login(username, password);
+      const { email, password } = req.body; // Changed username to email
+      const result = await this.userService.login(email, password); // Changed username to email
       
       return res.status(200).json({
         success: true,

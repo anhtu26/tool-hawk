@@ -8,13 +8,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose, // Added DialogClose for explicit closing
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea'; // For description
-import { CategoryNode } from './CategoryTree'; // Assuming CategoryNode is exported here
+import type { CategoryNode } from '@/components/categories/CategoryTree'; // Using consistent path alias and type-only import
 
 interface CategoryFormDialogProps {
   isOpen: boolean;

@@ -26,14 +26,14 @@ export class AuthService {
   /**
    * Authenticate user and generate JWT tokens
    */
-  public async login(username: string, password: string): Promise<AuthTokens> {
-    // Find user by username
+  public async login(email: string, password: string): Promise<AuthTokens> { // Changed username to email
+    // Find user by email
     const user = await this.prisma.user.findUnique({
-      where: { username },
+      where: { email }, // Changed username to email
     });
 
     if (!user) {
-      throw new AppError('Invalid username or password', 401);
+      throw new AppError('Invalid email or password', 401); // Changed username to email
     }
 
     if (!user.isActive) {
@@ -43,7 +43,7 @@ export class AuthService {
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new AppError('Invalid username or password', 401);
+      throw new AppError('Invalid email or password', 401); // Changed username to email
     }
 
     // Generate tokens

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
-import toolService, { Tool, ToolCategory, ToolFilters } from '../../services/toolService';
+import toolService from '../../services/toolService';
+import type { Tool, ToolCategory, ToolFilter } from '../../services/toolService';
 
 /**
  * Tools list page component
@@ -16,7 +17,7 @@ const ToolsListPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [filters, setFilters] = useState<ToolFilters>({
+  const [filters, setFilters] = useState<ToolFilter>({
     categoryId: '',
     status: '',
     page: 1,
@@ -56,22 +57,22 @@ const ToolsListPage: React.FC = () => {
   // Handle search form submission
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
+    setFilters((prev: ToolFilter) => ({ ...prev, search: searchTerm, page: 1 }));
   };
 
   // Handle category filter change
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFilters(prev => ({ ...prev, categoryId: e.target.value, page: 1 }));
+    setFilters((prev: ToolFilter) => ({ ...prev, categoryId: e.target.value, page: 1 }));
   };
 
   // Handle status filter change
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }));
+    setFilters((prev: ToolFilter) => ({ ...prev, status: e.target.value, page: 1 }));
   };
 
   // Handle pagination
   const handlePageChange = (newPage: number) => {
-    setFilters(prev => ({ ...prev, page: newPage }));
+    setFilters((prev: ToolFilter) => ({ ...prev, page: newPage }));
   };
 
   // Navigate to tool details page
@@ -174,8 +175,8 @@ const ToolsListPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="mt-2">
-                    <p className="text-sm">Category: {tool.category?.name || 'Uncategorized'}</p>
-                    {tool.vendor && <p className="text-sm">Vendor: {tool.vendor.name}</p>}
+                    <p className="text-sm">Category: {categories.find(cat => cat.id === tool.categoryId)?.name || 'Uncategorized'}</p>
+                    {tool.vendorId && <p className="text-sm">Vendor ID: {tool.vendorId}</p>}
                   </div>
                 </CardContent>
               </Card>
@@ -185,15 +186,15 @@ const ToolsListPage: React.FC = () => {
           <div className="flex justify-center mt-6 space-x-2">
             <Button
               variant="outline"
-              onClick={() => handlePageChange(filters.page - 1)}
-              disabled={filters.page <= 1}
+              onClick={() => handlePageChange((filters.page ?? 1) - 1)}
+              disabled={(filters.page ?? 1) <= 1}
             >
               Previous
             </Button>
             <Button
               variant="outline"
-              onClick={() => handlePageChange(filters.page + 1)}
-              disabled={tools.length < filters.limit}
+              onClick={() => handlePageChange((filters.page ?? 1) + 1)}
+              disabled={tools.length < (filters.limit ?? 10)}
             >
               Next
             </Button>

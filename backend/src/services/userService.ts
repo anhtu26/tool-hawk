@@ -20,8 +20,8 @@ export class UserService {
   }
 
   // Authentication methods
-  public async login(username: string, password: string): Promise<AuthTokens> {
-    return this.authService.login(username, password);
+  public async login(email: string, password: string): Promise<AuthTokens> { // Changed username to email
+    return this.authService.login(email, password); // Changed username to email
   }
 
   public async refreshToken(refreshToken: string): Promise<AuthTokens> {

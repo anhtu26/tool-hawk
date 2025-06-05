@@ -1,7 +1,8 @@
 // frontend/src/components/attributes/DynamicAttributeFormField.tsx (intended path)
 import React from 'react';
 // Adjust the import path once attribute.types.ts is moved
-import { CategoryAttributeDefinition, AttributeType } from '../../types/attribute.types'; 
+import { AttributeType } from '@/types/attribute.types';
+import type { CategoryAttributeDefinition } from '@/types/attribute.types'; 
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -51,7 +52,7 @@ const DynamicAttributeFormField: React.FC<DynamicAttributeFormFieldProps> = ({
             <Checkbox
               id={attribute.id}
               checked={!!value}
-              onCheckedChange={(checked) => onChange(checked)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.checked)}
             />
             <Label htmlFor={attribute.id} className="font-normal">
               {attribute.label}

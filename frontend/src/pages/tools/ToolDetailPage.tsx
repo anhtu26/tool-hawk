@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import toolService, { Tool } from '../../services/toolService';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import toolService, { type Tool } from '@/services/toolService';
+
+// Define ToolStatus type based on the Tool interface
+type ToolStatus = Tool['status'];
 
 /**
  * Tool detail page component
@@ -48,7 +51,7 @@ const ToolDetailPage: React.FC = () => {
   };
 
   // Handle tool status change
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: ToolStatus) => {
     if (!id || !tool) return;
     
     try {
@@ -107,7 +110,8 @@ const ToolDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Part Number</p>
-                  <p>{tool.partNumber || 'N/A'}</p>
+                  {/* <p>{tool.partNumber || 'N/A'}</p> // partNumber does not exist on Tool interface */}
+                  <p>N/A</p>
                 </div>
               </div>
               
@@ -119,7 +123,7 @@ const ToolDetailPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Category</p>
-                  <p>{tool.category?.name || 'Uncategorized'}</p>
+                  <p>{tool.categoryId || 'Uncategorized'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
@@ -147,15 +151,16 @@ const ToolDetailPage: React.FC = () => {
                 </div>
               </div>
               
-              {tool.vendor && (
+              {tool.vendorId && (
                 <div>
                   <p className="text-sm text-muted-foreground">Vendor</p>
-                  <p>{tool.vendor.name}</p>
+                  <p>{tool.vendorId}</p>
                 </div>
               )}
             </CardContent>
           </Card>
           
+          {/* 
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Technical Specifications</CardTitle>
@@ -163,7 +168,7 @@ const ToolDetailPage: React.FC = () => {
             <CardContent>
               {tool.attributes && tool.attributes.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
-                  {tool.attributes.map((attr, index) => (
+                  {tool.attributes.map((attr: any, index: number) => ( // Added types for attr and index for completeness if uncommented
                     <div key={index}>
                       <p className="text-sm text-muted-foreground">{attr.name}</p>
                       <p>{attr.value} {attr.unit || ''}</p>
@@ -175,6 +180,8 @@ const ToolDetailPage: React.FC = () => {
               )}
             </CardContent>
           </Card>
+          // Attributes are not directly on the Tool object. This section needs rework based on how ToolAttributeValue is fetched and related to CategoryAttributeDefinition.
+          */}
         </div>
         
         <div>
@@ -211,12 +218,12 @@ const ToolDetailPage: React.FC = () => {
                     Mark for Maintenance
                   </Button>
                   <Button 
-                    variant={tool.status === 'BROKEN' ? 'default' : 'outline'} 
+                    variant={tool.status === 'RETIRED' ? 'default' : 'outline'} 
                     className="w-full"
-                    onClick={() => handleStatusChange('BROKEN')}
-                    disabled={tool.status === 'BROKEN'}
+                    onClick={() => handleStatusChange('RETIRED')}
+                    disabled={tool.status === 'RETIRED'}
                   >
-                    Mark as Broken
+                    Mark as Retired
                   </Button>
                 </div>
               </div>
