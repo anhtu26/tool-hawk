@@ -3,6 +3,7 @@ import { AppError } from '../../utils/appError';
 
 export interface VendorCreateInput {
   name: string;
+  contactPerson?: string | null;
   description?: string | null;
   website?: string | null;
   email?: string | null;
@@ -22,6 +23,7 @@ export interface VendorCreateInput {
 
 export interface VendorUpdateInput {
   name?: string;
+  contactPerson?: string | null;
   description?: string | null;
   website?: string | null;
   email?: string | null;
@@ -54,8 +56,7 @@ export class VendorBaseService {
       include: {
         _count: {
           select: {
-            contacts: true,
-            tools: true,
+            toolsAsPrimaryVendor: true, // Corrected relation name
             purchaseOrders: true,
           },
         },
@@ -70,10 +71,9 @@ export class VendorBaseService {
     return this.prisma.vendor.findUnique({
       where: { id },
       include: {
-        contacts: true,
         _count: {
           select: {
-            tools: true,
+            toolsAsPrimaryVendor: true, // Corrected relation name
             purchaseOrders: true,
           },
         },
@@ -150,7 +150,7 @@ export class VendorBaseService {
     const vendor = await this.prisma.vendor.findUnique({
       where: { id },
       include: {
-        tools: true,
+        toolsAsPrimaryVendor: true,
         purchaseOrders: true,
       },
     });
@@ -160,7 +160,7 @@ export class VendorBaseService {
     }
 
     // Check if vendor has associated tools
-    if (vendor.tools.length > 0) {
+    if (vendor.toolsAsPrimaryVendor.length > 0) {
       throw new AppError('Cannot delete vendor with associated tools', 400);
     }
 
@@ -168,13 +168,6 @@ export class VendorBaseService {
     if (vendor.purchaseOrders.length > 0) {
       throw new AppError('Cannot delete vendor with associated purchase orders', 400);
     }
-
-    // Delete all contacts first
-    await this.prisma.vendorContact.deleteMany({
-      where: {
-        vendorId: id,
-      },
-    });
 
     // Delete vendor
     await this.prisma.vendor.delete({

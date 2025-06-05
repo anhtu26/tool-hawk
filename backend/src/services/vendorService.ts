@@ -1,6 +1,6 @@
-import { PrismaClient, Vendor, VendorContact } from '@prisma/client';
+import { PrismaClient, Vendor } from '@prisma/client';
 import { VendorBaseService, VendorCreateInput, VendorUpdateInput } from './vendor/vendorBaseService';
-import { VendorContactService, ContactCreateInput, ContactUpdateInput } from './vendor/vendorContactService';
+
 import { VendorRelationshipService } from './vendor/vendorRelationshipService';
 
 /**
@@ -8,14 +8,12 @@ import { VendorRelationshipService } from './vendor/vendorRelationshipService';
  */
 export class VendorService {
   private baseService: VendorBaseService;
-  private contactService: VendorContactService;
   private relationshipService: VendorRelationshipService;
   private prisma: PrismaClient;
 
   constructor() {
     this.prisma = new PrismaClient();
     this.baseService = new VendorBaseService(this.prisma);
-    this.contactService = new VendorContactService(this.prisma);
     this.relationshipService = new VendorRelationshipService(this.prisma);
   }
 
@@ -40,23 +38,6 @@ export class VendorService {
     return this.baseService.deleteVendor(id);
   }
 
-  // Vendor contact operations
-  public async createContact(vendorId: string, contactData: ContactCreateInput): Promise<VendorContact> {
-    return this.contactService.createContact(vendorId, contactData);
-  }
-
-  public async updateContact(
-    vendorId: string,
-    contactId: string,
-    contactData: ContactUpdateInput
-  ): Promise<VendorContact> {
-    return this.contactService.updateContact(vendorId, contactId, contactData);
-  }
-
-  public async deleteContact(vendorId: string, contactId: string): Promise<void> {
-    return this.contactService.deleteContact(vendorId, contactId);
-  }
-
   // Vendor relationship operations
   public async getVendorTools(vendorId: string): Promise<any[]> {
     return this.relationshipService.getVendorTools(vendorId);
@@ -68,4 +49,4 @@ export class VendorService {
 }
 
 // Re-export types for external use
-export { VendorCreateInput, VendorUpdateInput, ContactCreateInput, ContactUpdateInput };
+export { VendorCreateInput, VendorUpdateInput };

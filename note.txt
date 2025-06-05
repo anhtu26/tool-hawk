@@ -2,3 +2,9 @@
  Get-ChildItem -Path "c:\Users\anhtu\CascadeProjects\tool-hawk\backend\src" -Recurse -Include *.ts,*.tsx | ForEach-Object { $_ | Select-Object FullName, @{Name="LineCount"; Expression={(Get-Content $_.FullName | Measure-Object -Line).Lines}} } | Sort-Object LineCount -Descending | Select-Object -First 10 | Format-Table -AutoSize
 
  Get-ChildItem -Path "c:\Users\anhtu\CascadeProjects\tool-hawk\frontend\src" -Recurse -Include *.ts,*.tsx | ForEach-Object { $_ | Select-Object FullName, @{Name="LineCount"; Expression={(Get-Content $_.FullName | Measure-Object -Line).Lines}} } | Sort-Object LineCount -Descending | Select-Object -First 10 | Format-Table -AutoSize
+
+ Continue to refactor these files, while doing that, fix the UI error, I just got shadcn
+
+C:\Users\anhtu\CascadeProjects\tool-hawk\frontend\src\pages\categories\AttributeManagement.tsx                   396
+C:\Users\anhtu\CascadeProjects\tool-hawk\frontend\src\components\forms\ToolForm.tsx                              371
+C:\Users\anhtu\CascadeProjects\tool-hawk\frontend\src\pages\categories\CategoryManagement.tsx                    321

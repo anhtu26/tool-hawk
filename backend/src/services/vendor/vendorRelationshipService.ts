@@ -23,7 +23,7 @@ export class VendorRelationshipService {
 
     // Get tools
     return this.prisma.tool.findMany({
-      where: { vendorId },
+      where: { primaryVendorId: vendorId },
       select: {
         id: true,
         toolNumber: true,
@@ -69,7 +69,9 @@ export class VendorRelationshipService {
         status: true,
         orderDate: true,
         expectedDeliveryDate: true,
-        totalAmount: true,
+        // totalAmount: true, // This needs to be calculated
+        shippingCost: true, // Include for potential calculation
+        taxAmount: true,    // Include for potential calculation
         createdAt: true,
         updatedAt: true,
         createdBy: {
@@ -91,7 +93,7 @@ export class VendorRelationshipService {
         _count: {
           select: {
             items: true,
-            attachments: true,
+            // attachments: true, // Cannot be counted directly due to nullable FK on DocumentAttachment
           },
         },
       },

@@ -2,21 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
+import type { ControllerRenderProps } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea'; // Added
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Added
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'; // Added
 import toolService from '../../services/toolService';
 import type { ToolCategory } from '../../services/toolService';
 
-// Define ToolAttribute interface locally since we're having import issues
+// Define ToolAttribute interface locally
 interface ToolAttribute {
   name: string;
   value: string;
   unit?: string;
 }
 
-// Define validation schema using Zod
 const toolSchema = z.object({
   name: z.string().min(1, 'Tool name is required'),
   serialNumber: z.string().optional(),
@@ -24,16 +27,15 @@ const toolSchema = z.object({
   description: z.string().optional(),
   categoryId: z.string().min(1, 'Category is required'),
   status: z.enum(['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'BROKEN']),
-  purchaseDate: z.string().optional(),
-  purchasePrice: z.string().optional(),
+  purchaseDate: z.string().optional(), // Keep as string for date input, conversion handled in onSubmit
+  purchasePrice: z.string().optional(), // Keep as string for number input, conversion handled in onSubmit
   vendorId: z.string().optional(),
 });
 
-// Infer the type from the schema
 type ToolFormValues = z.infer<typeof toolSchema>;
 
 interface ToolFormProps {
-  toolId?: string; // If provided, we're editing an existing tool
+  toolId?: string;
 }
 
 const ToolForm: React.FC<ToolFormProps> = ({ toolId }) => {
@@ -42,15 +44,9 @@ const ToolForm: React.FC<ToolFormProps> = ({ toolId }) => {
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<ToolCategory[]>([]);
   const [attributes, setAttributes] = useState<ToolAttribute[]>([]);
-  const [vendors, setVendors] = useState<any[]>([]); // Simplified for now
+  const [vendors, setVendors] = useState<any[]>([]);
 
-  // Initialize react-hook-form with zod validation
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<ToolFormValues>({
+  const form = useForm<ToolFormValues>({
     resolver: zodResolver(toolSchema),
     defaultValues: {
       name: '',
@@ -65,37 +61,27 @@ const ToolForm: React.FC<ToolFormProps> = ({ toolId }) => {
     },
   });
 
-  // Load categories and tool data if editing
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch categories
         const categoriesData = await toolService.getToolCategories();
         setCategories(categoriesData);
-
-        // Fetch vendors (simplified for now)
-        // In a real implementation, this would call a vendor service
         setVendors([
           { id: '1', name: 'Vendor 1' },
           { id: '2', name: 'Vendor 2' },
         ]);
 
-        // If editing an existing tool, fetch its data
         if (toolId) {
           const toolData = await toolService.getToolById(toolId);
-          
-          // Set form values
-          setValue('name', toolData.name);
-          setValue('serialNumber', toolData.serialNumber || '');
-          setValue('partNumber', toolData.partNumber || '');
-          setValue('description', toolData.description || '');
-          setValue('categoryId', toolData.category?.id || '');
-          setValue('status', toolData.status);
-          setValue('purchaseDate', toolData.purchaseDate ? new Date(toolData.purchaseDate).toISOString().split('T')[0] : '');
-          setValue('purchasePrice', toolData.purchasePrice ? toolData.purchasePrice.toString() : '');
-          setValue('vendorId', toolData.vendor?.id || '');
-          
-          // Set attributes
+          form.setValue('name', toolData.name);
+          form.setValue('serialNumber', toolData.serialNumber || '');
+          form.setValue('partNumber', toolData.partNumber || '');
+          form.setValue('description', toolData.description || '');
+          form.setValue('categoryId', toolData.category?.id || '');
+          form.setValue('status', toolData.status);
+          form.setValue('purchaseDate', toolData.purchaseDate ? new Date(toolData.purchaseDate).toISOString().split('T')[0] : '');
+          form.setValue('purchasePrice', toolData.purchasePrice ? toolData.purchasePrice.toString() : '');
+          form.setValue('vendorId', toolData.vendor?.id || '');
           setAttributes(toolData.attributes || []);
         }
       } catch (err: any) {
@@ -103,29 +89,22 @@ const ToolForm: React.FC<ToolFormProps> = ({ toolId }) => {
         setError('Failed to load form data. Please try again later.');
       }
     };
-
     fetchData();
-  }, [toolId, setValue]);
+  }, [toolId, form.setValue, form]); // Added form to dependency array for setValue stability
 
-  // Handle form submission
   const onSubmit = async (data: ToolFormValues) => {
     setIsSubmitting(true);
     setError(null);
-
     try {
-      // Convert string price to number if provided
       const formattedData = {
         ...data,
         purchasePrice: data.purchasePrice ? parseFloat(data.purchasePrice) : undefined,
         attributes: attributes,
       };
-
       if (toolId) {
-        // Update existing tool
         await toolService.updateTool(toolId, formattedData as any);
         navigate(`/tools/${toolId}`);
       } else {
-        // Create new tool
         const newTool = await toolService.createTool(formattedData as any);
         navigate(`/tools/${newTool.id}`);
       }
@@ -137,19 +116,16 @@ const ToolForm: React.FC<ToolFormProps> = ({ toolId }) => {
     }
   };
 
-  // Handle attribute changes
   const handleAttributeChange = (index: number, field: 'name' | 'value' | 'unit', value: string) => {
     const newAttributes = [...attributes];
     newAttributes[index] = { ...newAttributes[index], [field]: value };
     setAttributes(newAttributes);
   };
 
-  // Add a new attribute
   const handleAddAttribute = () => {
     setAttributes([...attributes, { name: '', value: '', unit: '' }]);
   };
 
-  // Remove an attribute
   const handleRemoveAttribute = (index: number) => {
     const newAttributes = [...attributes];
     newAttributes.splice(index, 1);
@@ -161,234 +137,242 @@ const ToolForm: React.FC<ToolFormProps> = ({ toolId }) => {
       <CardHeader>
         <CardTitle>{toolId ? 'Edit Tool' : 'Add New Tool'}</CardTitle>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          {error && (
-            <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
-              {error}
-            </div>
-          )}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <CardContent className="space-y-4">
+            {error && (
+              <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                {error}
+              </div>
+            )}
 
-          <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">
-              Tool Name *
-            </label>
-            <Input
-              id="name"
-              {...register('name')}
-              aria-invalid={errors.name ? 'true' : 'false'}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }: { field: ControllerRenderProps<ToolFormValues, 'name'> }) => (
+                <FormItem>
+                  <FormLabel>Tool Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter tool name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.name && (
-              <p className="text-destructive text-sm mt-1">{errors.name.message}</p>
-            )}
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="serialNumber" className="text-sm font-medium">
-                Serial Number
-              </label>
-              <Input
-                id="serialNumber"
-                {...register('serialNumber')}
-                aria-invalid={errors.serialNumber ? 'true' : 'false'}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="serialNumber"
+                render={({ field }: { field: ControllerRenderProps<ToolFormValues, 'serialNumber'> }) => (
+                  <FormItem>
+                    <FormLabel>Serial Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter serial number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.serialNumber && (
-                <p className="text-destructive text-sm mt-1">{errors.serialNumber.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="partNumber" className="text-sm font-medium">
-                Part Number
-              </label>
-              <Input
-                id="partNumber"
-                {...register('partNumber')}
-                aria-invalid={errors.partNumber ? 'true' : 'false'}
+              <FormField
+                control={form.control}
+                name="partNumber"
+                render={({ field }: { field: ControllerRenderProps<ToolFormValues, 'partNumber'> }) => (
+                  <FormItem>
+                    <FormLabel>Part Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter part number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.partNumber && (
-                <p className="text-destructive text-sm mt-1">{errors.partNumber.message}</p>
-              )}
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label htmlFor="description" className="text-sm font-medium">
-              Description
-            </label>
-            <textarea
-              id="description"
-              className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-              {...register('description')}
-              aria-invalid={errors.description ? 'true' : 'false'}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }: { field: ControllerRenderProps<ToolFormValues, 'description'> }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Enter description" className="min-h-[100px]" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.description && (
-              <p className="text-destructive text-sm mt-1">{errors.description.message}</p>
-            )}
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="categoryId" className="text-sm font-medium">
-                Category *
-              </label>
-              <select
-                id="categoryId"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register('categoryId')}
-                aria-invalid={errors.categoryId ? 'true' : 'false'}
-              >
-                <option value="">Select Category</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              {errors.categoryId && (
-                <p className="text-destructive text-sm mt-1">{errors.categoryId.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="status" className="text-sm font-medium">
-                Status *
-              </label>
-              <select
-                id="status"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register('status')}
-                aria-invalid={errors.status ? 'true' : 'false'}
-              >
-                <option value="AVAILABLE">Available</option>
-                <option value="IN_USE">In Use</option>
-                <option value="MAINTENANCE">Maintenance</option>
-                <option value="BROKEN">Broken</option>
-              </select>
-              {errors.status && (
-                <p className="text-destructive text-sm mt-1">{errors.status.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="purchaseDate" className="text-sm font-medium">
-                Purchase Date
-              </label>
-              <Input
-                id="purchaseDate"
-                type="date"
-                {...register('purchaseDate')}
-                aria-invalid={errors.purchaseDate ? 'true' : 'false'}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }: { field: ControllerRenderProps<ToolFormValues, 'categoryId'> }) => (
+                  <FormItem>
+                    <FormLabel>Category *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map(category => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.purchaseDate && (
-                <p className="text-destructive text-sm mt-1">{errors.purchaseDate.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="purchasePrice" className="text-sm font-medium">
-                Purchase Price ($)
-              </label>
-              <Input
-                id="purchasePrice"
-                type="number"
-                step="0.01"
-                {...register('purchasePrice')}
-                aria-invalid={errors.purchasePrice ? 'true' : 'false'}
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }: { field: ControllerRenderProps<ToolFormValues, 'status'> }) => (
+                  <FormItem>
+                    <FormLabel>Status *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="AVAILABLE">Available</SelectItem>
+                        <SelectItem value="IN_USE">In Use</SelectItem>
+                        <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+                        <SelectItem value="BROKEN">Broken</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.purchasePrice && (
-                <p className="text-destructive text-sm mt-1">{errors.purchasePrice.message}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="purchaseDate"
+                render={({ field }: { field: ControllerRenderProps<ToolFormValues, 'purchaseDate'> }) => (
+                  <FormItem>
+                    <FormLabel>Purchase Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="purchasePrice"
+                render={({ field }: { field: ControllerRenderProps<ToolFormValues, 'purchasePrice'> }) => (
+                  <FormItem>
+                    <FormLabel>Purchase Price ($)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="vendorId"
+              render={({ field }: { field: ControllerRenderProps<ToolFormValues, 'vendorId'> }) => (
+                <FormItem>
+                  <FormLabel>Vendor</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Vendor" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {vendors.map(vendor => (
+                        <SelectItem key={vendor.id} value={vendor.id}>
+                          {vendor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
-          </div>
+            />
 
-          <div className="space-y-2">
-            <label htmlFor="vendorId" className="text-sm font-medium">
-              Vendor
-            </label>
-            <select
-              id="vendorId"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              {...register('vendorId')}
-              aria-invalid={errors.vendorId ? 'true' : 'false'}
-            >
-              <option value="">Select Vendor</option>
-              {vendors.map(vendor => (
-                <option key={vendor.id} value={vendor.id}>
-                  {vendor.name}
-                </option>
-              ))}
-            </select>
-            {errors.vendorId && (
-              <p className="text-destructive text-sm mt-1">{errors.vendorId.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-sm font-medium">Technical Specifications</h3>
-              <Button type="button" variant="outline" size="sm" onClick={handleAddAttribute}>
-                Add Specification
-              </Button>
-            </div>
-            
-            {attributes.map((attr, index) => (
-              <div key={index} className="grid grid-cols-3 gap-2 items-end">
-                <div>
-                  <label className="text-xs">Name</label>
-                  <Input
-                    value={attr.name}
-                    onChange={(e) => handleAttributeChange(index, 'name', e.target.value)}
-                    placeholder="e.g., Diameter"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs">Value</label>
-                  <Input
-                    value={attr.value}
-                    onChange={(e) => handleAttributeChange(index, 'value', e.target.value)}
-                    placeholder="e.g., 10"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <div className="flex-grow">
-                    <label className="text-xs">Unit</label>
+            {/* Technical Specifications Section - Remains unchanged for now */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-md font-medium">Technical Specifications</h3>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddAttribute}>
+                  Add Specification
+                </Button>
+              </div>
+              {attributes.map((attr, index) => (
+                <div key={index} className="grid grid-cols-3 gap-2 items-end">
+                  <div>
+                    <label className="text-xs">Name</label>
                     <Input
-                      value={attr.unit}
-                      onChange={(e) => handleAttributeChange(index, 'unit', e.target.value)}
-                      placeholder="e.g., mm"
+                      value={attr.name}
+                      onChange={(e) => handleAttributeChange(index, 'name', e.target.value)}
+                      placeholder="e.g., Diameter"
                     />
                   </div>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    className="h-10 w-10"
-                    onClick={() => handleRemoveAttribute(index)}
-                  >
-                    ×
-                  </Button>
+                  <div>
+                    <label className="text-xs">Value</label>
+                    <Input
+                      value={attr.value}
+                      onChange={(e) => handleAttributeChange(index, 'value', e.target.value)}
+                      placeholder="e.g., 10"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-grow">
+                      <label className="text-xs">Unit</label>
+                      <Input
+                        value={attr.unit || ''} // Ensure value is not null/undefined for Input
+                        onChange={(e) => handleAttributeChange(index, 'unit', e.target.value)}
+                        placeholder="e.g., mm"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="h-10 w-10"
+                      onClick={() => handleRemoveAttribute(index)}
+                    >
+                      ×
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate('/tools')}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Saving...' : (toolId ? 'Update Tool' : 'Create Tool')}
-          </Button>
-        </CardFooter>
-      </form>
+              ))}
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/tools')}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !form.formState.isDirty && toolId !== undefined}
+            >
+              {isSubmitting ? 'Saving...' : (toolId ? 'Update Tool' : 'Create Tool')}
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 };
